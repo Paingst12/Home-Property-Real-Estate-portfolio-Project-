@@ -15,15 +15,15 @@ The data transformation layer relies on custom **Data Analysis Expressions (DAX)
 Maps property lifecycles dynamically and flags non-linear variations, cleanly segregating unique off-plan market profiles:
 ```dax
 Built Category = 
-VAR TimelineDifference = YEAR('housing_data'[date]) - 'housing_data'[year_build]
+VAR Time_diff = YEAR(housing_data[date]) - housing_data[year_build]
+
 RETURN
-    SWITCH(
-        TRUE(),
-        ISBLANK('housing_data'[year_build]), "Unknown",
-        TimelineDifference < 0, "Pre-built / ကြိုပွိင့်",
-        TimelineDifference <= 5, "Brand New (0-5 Years)",
-        TimelineDifference <= 15, "Recent (6-15 Years)",
-        "Established (16+ Years)"
+    SWITCH(TRUE(),
+        ISBLANK(housing_data[year_build]), "Unknown",
+        Time_diff < 0, "Pre-Built (purchased before built)",
+        Time_diff <= 5, "Brand New (0 to 5 years)",
+        Time_diff <= 15, "Recent Built (6 to 15 years)",
+        "Established (+16 years)"
     )
 ```
 
@@ -31,10 +31,11 @@ RETURN
 Monitors macro-level capital performance trends across shifting market timelines:
 ```dax
 Year Over Year Growth % = 
-VAR CurrentYearSales = SUM('housing_data'[purchase_price])
-VAR PreviousYearSales = CALCULATE(SUM('housing_data'[purchase_price]), SAMEPERIODLASTYEAR('Date_Table'[Date]))
+VAR Cur_Yr_Rev = SUM(housing_data[purchase_price])
+VAR Pvs_Yr_Rev = CALCULATE(SUM(housing_data[purchase_price]), SAMEPERIODLASTYEAR(DATESYTD(Date_Table[Date]))) 
+
 RETURN
-    DIVIDE(CurrentYearSales - PreviousYearSales, PreviousYearSales, 0)
+IF(Pvs_Yr_Rev = 0 || Not(ISBLANK(Pvs_Yr_Rev)), DIVIDE(Cur_Yr_Rev - Pvs_Yr_Rev, Pvs_Yr_Rev), Blank())
 ```
 
 ---
